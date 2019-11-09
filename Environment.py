@@ -17,7 +17,7 @@ class Environment:
 
         self.agents = {}
         for n in range(num_agents):
-            self.agents[n] = Agent()
+            self.agents[n] = Agent(self)
 
 
     def reset(self):
@@ -32,20 +32,31 @@ class Environment:
         '''
 
         :param actions: dict of actions per agent
-        :return: tuple of following:
-            states_prime: dict of new state for each agent
-            rewards: dict of reward per agent
-            done: dict of agent terminated or not
+        :return: dict of tuples, each element being:
+            state_prime: new state for the agent
+            reward: reward for the agent
+            done: agent terminated or not
             info: anything else
         '''
 
-        for agent_id, action in actions.items():
-            state_new, reward, done, info = self.make_action(agent_id, action)
+        for rid, action in actions.items():
+            state_new, reward, done, info = self.make_action(rid, action)
 
         return 0, 0, 0, 0
 
-    def make_action(self, agent_id, action):
-        current_pos = self.agents[agent_id].pos
+    def make_action(self, rid, action):
+        '''
+
+        :param rid: id of the agent
+        :param action: action for the agent
+        :return: tuple of following:
+            state_prime: new state for the agent
+            reward: reward for the agent
+            done: agent terminated or not
+            info: anything else
+        '''
+        agent = self.agents[rid]
+        current_pos = agent.pos
         # action: 0-north, 1-east, 2-south, 3-west
 
         new_pos = (-1,-1)
@@ -62,14 +73,41 @@ class Environment:
             assert new_pos < (0,0), "out of bounds - outside map"
             assert new_pos >= (self.width, self.height), "out of bounds - outside map"
             assert self.grid[new_pos] != 0, "out of bounds - internal edge"
+
         except Exception as e:
             print("position:", new_pos, "is", e)
-            return current_pos
+            reward = self.get_reward(new_pos)
+            return None, reward, True, None
 
-        # TODO: set new position here
+        state_prime = agent.get_state(new_pos)
+        reward = self.get_reward(new_pos)
+        done = self.get_terminate(new_pos)
 
+        return state_prime, reward, done, None
 
-    def get_range_from_position(self):
+    def get_reward(self, new_pos):
+        '''
+
+        :param new_pos: new position of the agent
+        :return: dict of tuples, each element being:
+            reward: reward for the given position
+        '''
+
+        # FIXME: temp set reward
+        reward = 0
+
+        return reward
+
+    def sense_from_position(self, rid):
+        '''
+
+        :param rid: id of the agent
+        :return: sense of the state
+        '''
+
+        # FIXME: temp set state
+        state = {0:1, 1:1, 2:1, 3:1}
+
         return state
 
 
