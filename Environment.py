@@ -59,16 +59,14 @@ class Environment:
             new_pos = (current_pos[0]-1,current_pos[1])
 
         try:
-            print(new_pos)
-            print(self.grid[new_pos])
             assert new_pos < (0,0), "out of bounds - outside map"
             assert new_pos >= (self.width, self.height), "out of bounds - outside map"
             assert self.grid[new_pos] != 0, "out of bounds - internal edge"
         except Exception as e:
-            print(e)
-            return "terminate"
+            print("position:", new_pos, "is", e)
+            return current_pos
 
-        return 0,0,0,0
+        # TODO: set new position here
 
 
     def get_range_from_position(self):
