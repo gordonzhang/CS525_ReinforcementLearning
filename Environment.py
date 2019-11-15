@@ -29,11 +29,11 @@ class Environment:
 
         :return: dict of agent state
         '''
-        # FIXME: temp setup states
         self.__init__(self.width, self.height, self.num_agents, self.start, self.goal)
+
+        # FIXME: temp setup states
         states = None
         return states
-
 
     def step(self, actions):
         '''
@@ -105,14 +105,20 @@ class Environment:
             reward: reward for the given position
         '''
 
+        # TODO: implement reward
         # FIXME: temp set reward
         reward = 0
 
         return reward
 
-    def get_terminate(self, new_pos):
+    def get_terminate(self, pos):
+        '''
 
-        if(new_pos) == self.goal:
+        :param pos: pos of the agent
+        :return: is the state an end-state
+        '''
+
+        if(pos) == self.goal:
             # at goal
             return True
             
@@ -123,7 +129,7 @@ class Environment:
     def sense_from_position(self, pos):
         '''
 
-        :param rid: id of the agent
+        :param pos: pos of the agent
         :return: sense of the state
         '''
 
@@ -177,3 +183,9 @@ class Environment:
                 arr[i] = 1
 
         return arr
+
+    def render(self):
+        '''
+        
+        '''
+        pass
