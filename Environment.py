@@ -4,7 +4,7 @@ import numpy as np
 
 class Environment:
 
-    def __init__(self, width=10, height=10, num_agents=1, start=(1,1), goal=(10,10), view_range=1):
+    def __init__(self, width=10, height=10, num_agents=1, start=(0,0), goal=(9,9), view_range=1):
         self.width = width
         self.height = height
         # self.grid stores state of each grid of the map
@@ -29,6 +29,8 @@ class Environment:
         self.reward_map[goal] = 1.0
 
         self.reward_death = -100.0
+
+        self.called_render = False
 
 
     def reset(self):
@@ -114,7 +116,7 @@ class Environment:
         '''
 
         # FIXME: temp implement reward
-        
+
         if(self.dead):
             reward = self.reward_death
         
@@ -195,8 +197,61 @@ class Environment:
 
         return arr
 
-    def render(self):
+    def render(self, block=True):
         '''
 
         '''
-        pass
+        if self.called_render == False:
+            self.called_render = True
+
+            import matplotlib.pyplot as plt
+            from matplotlib import colors
+            import matplotlib.ticker as plticker
+
+            # persisitent graph variables
+            self.fig, self.ax = plt.subplots()
+
+            self.cmap = colors.ListedColormap(['black', 'white', 'green', 'blue'])
+            self.bounds = [0,0,1,1,2,2,3,3]
+            self.norm = colors.BoundaryNorm(self.bounds, self.cmap.N)
+            
+            temp = self.grid.copy()
+            vpad = np.zeros((self.height,1))
+            hpad = np.zeros((1,self.width+2))
+
+            self.grid_copy = np.hstack((vpad,temp,vpad))
+            self.grid_copy = np.vstack((hpad,self.grid_copy,hpad))
+
+            h_ticks = [i+0.5 for i in range(-1,self.width+1)]
+            v_ticks = [i+0.5 for i in range(-1,self.height+1)]
+            self.ax.set_yticks(v_ticks, minor=False)
+            self.ax.set_xticks(h_ticks, minor=False)
+
+            self.ax.grid()
+
+            self.im = self.ax.imshow(self.grid_copy, cmap=self.cmap, norm=self.norm)
+
+        # print(self.grid_copy.shape)
+        # print(self.grid_copy[1:self.height, 1:self.width].shape)
+
+        self.grid_copy[1:self.height+1, 1:self.width+1] = self.grid
+
+        for rid, agent in self.agents.items():
+            pos = agent.pos
+            pos = (pos[0]+1, pos[1]+1)
+            self.grid_copy[pos]=3
+
+        # grid_copy = self.grid_copy[::-1,:]
+        # self.im.set_data(grid_copy)
+        self.im.set_data(self.grid_copy)
+
+        self.fig.suptitle("Agent in 10x10 grid world, plus edges")
+        plt.draw()
+        plt.show(block=block)
+        # if (iteration % 2 == 0 and iteration <= 8) or iteration == 40:
+        # 	fig.savefig("P=%.1f_t=%d_Iteration=%d.png" % (P, t, iteration))
+        plt.pause(0.001)
+
+if __name__=="__main__":
+    env = Environment()
+    env.render(block=True)
