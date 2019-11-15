@@ -49,11 +49,10 @@ class Environment:
         results = {}
         for rid, action in actions.items():
             result = self.make_action(rid, action)
-            # print("res:", result)
+            
             # state_new, reward, done, info = result
             results[rid] = result
 
-        # print("reses:", results)
         return results
 
     def make_action(self, rid, action):
@@ -88,7 +87,7 @@ class Environment:
 
         except Exception as e:
             print("position:", new_pos, "is", e)
-            print("\tRemember the grid size is", self.grid.shape)
+            print("\tRemember (in y,x fromat) the grid size is", self.grid.shape)
             reward = self.get_reward(new_pos)
             return None, reward, True, None
 
@@ -146,8 +145,6 @@ class Environment:
         west = self.grid[pos[0], west_lim:west_min]
         east = self.grid[pos[0], east_min:east_lim]
 
-        # print(len(north), len(south), len(west), len(east))
-
         north = north[::]
         west = west[::]
         
@@ -155,11 +152,6 @@ class Environment:
         south = self.sense_helper(south)
         west = self.sense_helper(west)
         east = self.sense_helper(east)
-
-        # print("N:", north)
-        # print("E:", east)
-        # print("S:", south)
-        # print("W:", west)
 
         return {0:north, 1:east, 2:south, 3:west}
 
