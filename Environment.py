@@ -23,6 +23,13 @@ class Environment:
 
         self.view_range = view_range
 
+        self.dead = False
+
+        self.reward_map = np.zeros((height,width))
+        self.reward_map[goal] = 1.0
+
+        self.reward_death = -100.0
+
 
     def reset(self):
         '''
@@ -88,6 +95,7 @@ class Environment:
         except Exception as e:
             print("position:", new_pos, "is", e)
             print("\tRemember (in y,x fromat) the grid size is", self.grid.shape)
+            self.dead = True
             reward = self.get_reward(new_pos)
             return None, reward, True, None
 
@@ -97,17 +105,20 @@ class Environment:
 
         return state_prime, reward, done, None
 
-    def get_reward(self, new_pos):
+    def get_reward(self, pos):
         '''
 
-        :param new_pos: new position of the agent
+        :param pos: position of the agent
         :return: dict of tuples, each element being:
             reward: reward for the given position
         '''
 
-        # TODO: implement reward
-        # FIXME: temp set reward
-        reward = 0
+        # FIXME: temp implement reward
+        
+        if(self.dead):
+            reward = self.reward_death
+        
+        reward = self.reward_map[pos]
 
         return reward
 
@@ -186,6 +197,6 @@ class Environment:
 
     def render(self):
         '''
-        
+
         '''
         pass
