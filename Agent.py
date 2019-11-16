@@ -7,6 +7,9 @@ class Agent:
         self.pos_history = [pos_start]
         self.env = env
 
+    def set_pos(self, new_pos):
+        self.pos = new_pos
+        
     def get_state(self, new_pos):
         '''
 

@@ -4,7 +4,7 @@ import numpy as np
 
 class Environment:
 
-    def __init__(self, width=10, height=10, num_agents=1, start=(0,0), goal=(9,9), view_range=1):
+    def __init__(self, width=10, height=10, num_agents=1, start=(0,0), goal=(9,9), view_range=1, render=False):
         self.width = width
         self.height = height
         # self.grid stores state of each grid of the map
@@ -30,7 +30,12 @@ class Environment:
 
         self.reward_death = -100.0
 
+        self.renderEnv = render
+        
         self.called_render = False
+
+        if self.renderEnv:
+            self.render()
 
 
     def reset(self):
@@ -62,6 +67,9 @@ class Environment:
             # state_new, reward, done, info = result
             results[rid] = result
 
+        if self.renderEnv:
+            self.render()
+        
         return results
 
     def make_action(self, rid, action):
@@ -89,14 +97,16 @@ class Environment:
         elif action == 3:
             new_pos = (current_pos[0],current_pos[1]-1)
 
+        self.agents[rid].set_pos(new_pos)
+
         try:
             assert new_pos >= (0,0), "out of bounds - outside map (below_min)"
             assert new_pos < (self.height, self.width), "out of bounds - outside map (above_max)"
             assert self.grid[new_pos] != 0, "out of bounds - internal edge"
 
         except Exception as e:
-            print("position:", new_pos, "is", e)
-            print("\tRemember (in y,x fromat) the grid size is", self.grid.shape)
+            # print("position:", new_pos, "is", e)
+            # print("\tRemember (in y,x fromat) the grid size is", self.grid.shape)
             self.dead = True
             reward = self.get_reward(new_pos)
             return None, reward, True, None
@@ -119,7 +129,9 @@ class Environment:
 
         if(self.dead):
             reward = self.reward_death
+            return reward
         
+        # if pos[0] < 0 or pos[1] < 0 or pos[0] > self.height-1 or pos[1] < :
         reward = self.reward_map[pos]
 
         return reward
@@ -201,12 +213,15 @@ class Environment:
         '''
 
         '''
+
+
+        import matplotlib.pyplot as plt
+        from matplotlib import colors
+        import matplotlib.ticker as plticker
+        from matplotlib.ticker import AutoMinorLocator
+
         if self.called_render == False:
             self.called_render = True
-
-            import matplotlib.pyplot as plt
-            from matplotlib import colors
-            import matplotlib.ticker as plticker
 
             # persisitent graph variables
             self.fig, self.ax = plt.subplots()
@@ -222,12 +237,35 @@ class Environment:
             self.grid_copy = np.hstack((vpad,temp,vpad))
             self.grid_copy = np.vstack((hpad,self.grid_copy,hpad))
 
-            h_ticks = [i+0.5 for i in range(-1,self.width+1)]
-            v_ticks = [i+0.5 for i in range(-1,self.height+1)]
-            self.ax.set_yticks(v_ticks, minor=False)
-            self.ax.set_xticks(h_ticks, minor=False)
+            # h_ticks = [i+0.5 for i in range(-1,self.width+1)]
+            # v_ticks = [i+0.5 for i in range(-1,self.height+1)]
+            # self.ax.set_yticks(v_ticks, minor=False)
+            # self.ax.set_xticks(h_ticks, minor=False)
 
-            self.ax.grid()
+            # # minor_locator = AutoMinorLocator(1)
+            # # self.ax.xaxis.set_minor_locator(minor_locator)
+            # # self.ax.yaxis.set_minor_locator(minor_locator)
+
+            # self.ax.grid(which='minor')
+
+            self.ax.set_xlim(0, self.width+1.5)
+            self.ax.set_ylim(self.height+1.5, 0)
+            self.ax.set_xticks(range(0,self.width+2))
+            x_values = np.arange(start=0,stop=self.width+2) - .5
+            self.ax.set_xticks(x_values, minor=True)
+
+            self.ax.set_yticks(range(self.height+1,-1,-1))
+            y_values = np.arange(start=self.height+2,stop=-1, step=-1) - .5
+            self.ax.set_yticks(y_values, minor=True)
+            self.ax.grid(which='minor')
+
+            # self.ax.invert_yaxis()
+
+
+            print(x_values)
+            print(y_values)
+
+            # self.ax.grid()
 
             self.im = self.ax.imshow(self.grid_copy, cmap=self.cmap, norm=self.norm)
 
@@ -247,7 +285,7 @@ class Environment:
 
         self.fig.suptitle("Agent in 10x10 grid world, plus edges")
         plt.draw()
-        plt.show(block=block)
+        plt.show(block=False)
         # if (iteration % 2 == 0 and iteration <= 8) or iteration == 40:
         # 	fig.savefig("P=%.1f_t=%d_Iteration=%d.png" % (P, t, iteration))
         plt.pause(0.001)
