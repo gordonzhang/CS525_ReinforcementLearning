@@ -237,17 +237,6 @@ class Environment:
             self.grid_copy = np.hstack((vpad,temp,vpad))
             self.grid_copy = np.vstack((hpad,self.grid_copy,hpad))
 
-            # h_ticks = [i+0.5 for i in range(-1,self.width+1)]
-            # v_ticks = [i+0.5 for i in range(-1,self.height+1)]
-            # self.ax.set_yticks(v_ticks, minor=False)
-            # self.ax.set_xticks(h_ticks, minor=False)
-
-            # # minor_locator = AutoMinorLocator(1)
-            # # self.ax.xaxis.set_minor_locator(minor_locator)
-            # # self.ax.yaxis.set_minor_locator(minor_locator)
-
-            # self.ax.grid(which='minor')
-
             self.ax.set_xlim(0, self.width+1.5)
             self.ax.set_ylim(self.height+1.5, 0)
             self.ax.set_xticks(range(0,self.width+2))
@@ -261,16 +250,7 @@ class Environment:
 
             # self.ax.invert_yaxis()
 
-
-            print(x_values)
-            print(y_values)
-
-            # self.ax.grid()
-
             self.im = self.ax.imshow(self.grid_copy, cmap=self.cmap, norm=self.norm)
-
-        # print(self.grid_copy.shape)
-        # print(self.grid_copy[1:self.height, 1:self.width].shape)
 
         self.grid_copy[1:self.height+1, 1:self.width+1] = self.grid
 
@@ -283,7 +263,7 @@ class Environment:
         # self.im.set_data(grid_copy)
         self.im.set_data(self.grid_copy)
 
-        self.fig.suptitle("Agent in 10x10 grid world, plus edges")
+        self.fig.suptitle("Agent in grid world, plus edges")
         plt.draw()
         plt.show(block=False)
         # if (iteration % 2 == 0 and iteration <= 8) or iteration == 40:
