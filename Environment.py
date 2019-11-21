@@ -207,6 +207,9 @@ class Environment:
             elif val == 2:
                 arr[i] = 1
 
+        if len(arr) > self.view_range:
+            arr = arr[:2]
+
         return arr
 
     def render(self, block=True):

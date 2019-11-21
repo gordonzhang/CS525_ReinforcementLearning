@@ -28,7 +28,12 @@ def main(stdscr):
             
             agents = env.step({0:a})
             state, reward, done, _ = agents[0]
+
+            pStr = "\t%s\n\t%s\n\t%s\n\t%s" % (list(state[0][0]), list(state[0][1]), list(state[0][2]), list(state[0][3]))
             stdscr.addstr("Reward: " + str(reward))
+            stdscr.addstr("\nAm I done? " + str(done))
+            stdscr.addstr("\nI see: " + str(pStr))
+            stdscr.addstr("\nMy hist: " + str(list(state[1])))
             # print("Reward:", reward)
             stdscr.refresh()
             stdscr.move(0, 0)
