@@ -1,10 +1,11 @@
 from Environment import Environment
+from Utils import Agent, Direction, Position, StepResponse
 
 import curses
 import time
 
 
-env = Environment(width=5, height=5, num_agents=1, start=(0,0), goal=(4,4), view_range=2, render=True)
+env = Environment(width=5, height=5, num_agents=1, start=Position(0,0), goal=Position(4,4), view_range=2, render=True)
 
 def main(stdscr):
     # do not wait for input when calling getch
@@ -27,19 +28,30 @@ def main(stdscr):
                 a = 1
             
             agents = env.step({0:a})
-            state, reward, done, _ = agents[0]
+            result = agents[0]
 
-            pStr = "\t%s\n\t%s\n\t%s\n\t%s" % (list(state[0][0]), list(state[0][1]), list(state[0][2]), list(state[0][3]))
+            state = result.state
+            reward = result.reward
+            done = result.done
+
+            if done:
+                pStr = None
+            else:
+                pStr = "\t%s\n\t%s\n\t%s\n\t%s" % ( \
+                    list(state.observation.up), \
+                    list(state.observation.right), \
+                    list(state.observation.down), \
+                    list(state.observation.left) )
+
             stdscr.addstr("Reward: " + str(reward))
             stdscr.addstr("\nAm I done? " + str(done))
             stdscr.addstr("\nI see: " + str(pStr))
-            stdscr.addstr("\nMy hist: " + str(list(state[1])))
-            # print("Reward:", reward)
+            
             stdscr.refresh()
             stdscr.move(0, 0)
             time.sleep(.01)
 
-    time.sleep(1)
+    time.sleep(2)
 
 
 if __name__ == '__main__':

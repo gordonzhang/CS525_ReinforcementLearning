@@ -1,16 +1,24 @@
-from Agent import Agent
+from Utils import Agent, Direction, Position, StepResponse, Observation
+from enum import Enum
 import numpy as np
 
 
 class Environment:
 
-    def __init__(self, width=10, height=10, num_agents=1, start=(0,0), goal=(9,9), view_range=1, render=False):
+    def __init__(self, width=10, height=10, num_agents=1, start=Position(), goal=Position(9,9), view_range=1, render=False, std=False):
+        self.std = std
+
         self.width = width
         self.height = height
+
+        if self.std:
+            start = Position(y=start[0], x=start[1])
+            goal = Position(y=goal[0], x=goal[1])
+
         # self.grid stores state of each grid of the map
         # 0-obstacle, 1-walkable, 2-goal, 3-agent
         self.grid = np.ones((height, width), dtype=int)
-        self.grid[goal] = 2
+        self.grid[goal.asTuple()] = 2
 
         self.num_agents = num_agents
 
@@ -26,7 +34,7 @@ class Environment:
         self.dead = False
 
         self.reward_map = np.zeros((height,width))
-        self.reward_map[goal] = 1.0
+        self.reward_map[goal.asTuple()] = 1.0
 
         self.reward_death = -100.0
 
@@ -35,7 +43,7 @@ class Environment:
         self.called_render = False
 
         if self.renderEnv:
-            self.render()
+            self._render()
 
 
     def reset(self):
@@ -62,17 +70,22 @@ class Environment:
 
         results = {}
         for rid, action in actions.items():
-            result = self.make_action(rid, action)
+            if self.std and isinstance(action, Enum):
+                action = action.value
+            result = self._make_action(rid, action)
+
+            if self.std:
+                result = result.asStd()
             
             # state_new, reward, done, info = result
             results[rid] = result
 
         if self.renderEnv:
-            self.render()
-        
+            self._render()
+
         return results
 
-    def make_action(self, rid, action):
+    def _make_action(self, rid, action):
         '''
 
         :param rid: id of the agent
@@ -84,40 +97,43 @@ class Environment:
             info: anything else
         '''
         agent = self.agents[rid]
-        current_pos = agent.pos
+        pos = agent.pos
         # action: 0-north, 1-east, 2-south, 3-west
 
-        new_pos = (-1,-1)
-        if action == 0:
-            new_pos = (current_pos[0]-1,current_pos[1])
-        elif action == 1:
-            new_pos = (current_pos[0],current_pos[1]+1)
-        elif action == 2:
-            new_pos = (current_pos[0]+1,current_pos[1])
-        elif action == 3:
-            new_pos = (current_pos[0],current_pos[1]-1)
+        new_pos = Position(-1,-1)
+        if action == Direction.UP or action == Direction.UP.value:
+            new_pos = pos.up()
+        elif action == Direction.RIGHT or action == Direction.RIGHT.value:
+            new_pos = pos.right()
+        elif action == Direction.DOWN or action == Direction.DOWN.value:
+            new_pos = pos.down()
+        elif action == Direction.LEFT or action == Direction.LEFT.value:
+            new_pos = pos.left()
 
-        self.agents[rid].set_pos(new_pos)
+        agent._set_pos(new_pos)
 
         try:
-            assert new_pos >= (0,0), "out of bounds - outside map (below_min)"
-            assert new_pos < (self.height, self.width), "out of bounds - outside map (above_max)"
-            assert self.grid[new_pos] != 0, "out of bounds - internal edge"
+            assert new_pos >= Position(0,0), "out of bounds - outside map (below_min)"
+            assert new_pos < Position(self.height, self.width), "out of bounds - outside map (above_max)"
+            assert self.grid[new_pos.asTuple()] != 0, "out of bounds - internal edge"
 
         except Exception as e:
             # print("position:", new_pos, "is", e)
             # print("\tRemember (in y,x fromat) the grid size is", self.grid.shape)
             self.dead = True
-            reward = self.get_reward(new_pos)
-            return None, reward, True, None
+            reward = self._get_reward(new_pos)
+            return StepResponse(None, reward, True)
+            # return None, reward, True, None
 
-        state_prime = agent.get_state(new_pos)
-        reward = self.get_reward(new_pos)
-        done = self.get_terminate(new_pos)
+        state_prime = agent._get_state(new_pos)
+        reward = self._get_reward(new_pos)
+        done = self._get_terminate(new_pos)
 
-        return state_prime, reward, done, None
+        resp = StepResponse(state_prime, reward, done)
+        
+        return resp
 
-    def get_reward(self, pos):
+    def _get_reward(self, pos):
         '''
 
         :param pos: position of the agent
@@ -132,11 +148,11 @@ class Environment:
             return reward
         
         # if pos[0] < 0 or pos[1] < 0 or pos[0] > self.height-1 or pos[1] < :
-        reward = self.reward_map[pos]
+        reward = self.reward_map[pos.asTuple()]
 
         return reward
 
-    def get_terminate(self, pos):
+    def _get_terminate(self, pos):
         '''
 
         :param pos: pos of the agent
@@ -151,7 +167,7 @@ class Environment:
 
         return False
 
-    def sense_from_position(self, pos):
+    def _sense_from_position(self, pos):
         '''
 
         :param pos: pos of the agent
@@ -161,32 +177,36 @@ class Environment:
         # action: 0-north, 1-east, 2-south, 3-west
         # 0-obstacle, 1-walkable, 2-goal, 3-agent
 
-        north_lim = max(0,pos[0]-1-self.view_range)
-        south_lim = min(self.height,pos[0]+1+self.view_range)
-        west_lim = max(0,pos[1]-1-self.view_range)
-        east_lim = min(self.width, pos[1]+1+self.view_range)
+        north_lim = max(0, pos.up().y - self.view_range)
+        south_lim = min(self.height, pos.down().y + self.view_range)
+        west_lim = max(0, pos.left().x - self.view_range)
+        east_lim = min(self.width, pos.right().x + self.view_range)
 
-        north_min = max(0, pos[0])
-        south_min = min(self.height, pos[0]+1)
-        west_min = max(0, pos[1])
-        east_min = min(self.width, pos[1]+1)
+        north_min = max(0, pos.y)
+        south_min = min(self.height, pos.down().y)
+        west_min = max(0, pos.x)
+        east_min = min(self.width, pos.right().x)
 
-        north = self.grid[north_lim:north_min, pos[1]]
-        south = self.grid[south_min:south_lim, pos[1]]
-        west = self.grid[pos[0], west_lim:west_min]
-        east = self.grid[pos[0], east_min:east_lim]
+        north = self.grid[north_lim:north_min, pos.x]
+        south = self.grid[south_min:south_lim, pos.x]
+        west = self.grid[pos.y, west_lim:west_min]
+        east = self.grid[pos.y, east_min:east_lim]
 
         north = north[::]
         west = west[::]
         
-        north = self.sense_helper(north)
-        south = self.sense_helper(south)
-        west = self.sense_helper(west)
-        east = self.sense_helper(east)
+        north = self._sense_helper(north)
+        south = self._sense_helper(south)
+        west = self._sense_helper(west)
+        east = self._sense_helper(east)
 
-        return {0:north, 1:east, 2:south, 3:west}
+        obs = Observation(north, east, south, west)
 
-    def sense_helper(self, arr):
+        return obs
+
+        # return {Direction.UP:north, Direction.RIGHT:east, Direction.DOWN:south, Direction.LEFT:west}
+
+    def _sense_helper(self, arr):
         '''
 
         :param arr: array of direction view
@@ -208,11 +228,11 @@ class Environment:
                 arr[i] = 1
 
         if len(arr) > self.view_range:
-            arr = arr[:2]
+            arr = arr[:self.view_range]
 
         return arr
 
-    def render(self, block=True):
+    def _render(self, block=True):
         '''
 
         '''
@@ -259,8 +279,8 @@ class Environment:
 
         for rid, agent in self.agents.items():
             pos = agent.pos
-            pos = (pos[0]+1, pos[1]+1)
-            self.grid_copy[pos]=3
+            pos = pos.down().right()
+            self.grid_copy[pos.asTuple()]=3
 
         # grid_copy = self.grid_copy[::-1,:]
         # self.im.set_data(grid_copy)
@@ -275,4 +295,4 @@ class Environment:
 
 if __name__=="__main__":
     env = Environment()
-    env.render(block=True)
+    env._render(block=True)
