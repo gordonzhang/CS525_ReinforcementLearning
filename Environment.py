@@ -232,7 +232,7 @@ class Environment:
 
         return arr
 
-    def _render(self, block=True):
+    def _render(self, block=False):
         '''
 
         '''
