@@ -5,7 +5,7 @@ import numpy as np
 
 class Environment:
 
-    def __init__(self, height=5, width=5, num_agents=1, start=Position(), goal=Position(9,9), view_range=1, horizon=2, goal_reward=1.0, render=False, std=False):
+    def __init__(self, height=5, width=5, num_agents=1, start=Position(), goal=Position(9E9,9E9), view_range=1, horizon=2, goal_reward=1.0, render=False, std=False):
         self.std = std
 
         self.width = width
@@ -14,6 +14,9 @@ class Environment:
         if self.std:
             start = Position(y=start[0], x=start[1])
             goal = Position(y=goal[0], x=goal[1])
+
+        if(goal.x > self.width or goal.y > self.height):
+            goal = Position(self.height-1, self.width-1)
 
         # self.grid stores state of each grid of the map
         # 0-obstacle, 1-walkable, 2-goal, 3-agent
@@ -296,5 +299,5 @@ class Environment:
         plt.pause(0.001)
 
 if __name__=="__main__":
-    env = Environment(width=5, height=5, num_agents=1, start=Position(0,0), goal=Position(4,4), view_range=2, render=True)
+    env = Environment(width=20, height=20, num_agents=1, start=Position(0,0), view_range=2, render=True)
     env._render(block=True)

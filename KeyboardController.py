@@ -5,7 +5,7 @@ import curses
 import time
 
 
-env = Environment(width=5, height=5, num_agents=1, start=Position(0,0), goal=Position(4,4), view_range=2, render=True)
+env = Environment(width=20, height=20, num_agents=1, start=Position(0,0), goal=Position(19,19), view_range=2, render=True)
 
 def main(stdscr):
     # do not wait for input when calling getch
