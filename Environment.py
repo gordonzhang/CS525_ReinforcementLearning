@@ -5,11 +5,14 @@ import numpy as np
 
 class Environment:
 
-    def __init__(self, height=5, width=5, num_agents=1, start=Position(), goal=Position(9E9,9E9), view_range=1, horizon=2, goal_reward=1.0, render=False, std=False):
+    def __init__(self, height=5, width=5, num_agents=1, start=Position(), goal=Position(9E9,9E9), \
+                    view_range=1, horizon=2, goal_reward=1.0, pos_hist_len=5, render=False, std=False):
         self.std = std
 
         self.width = width
         self.height = height
+
+        self.pos_hist_len = pos_hist_len
 
         if self.std:
             start = Position(y=start[0], x=start[1])
@@ -27,7 +30,7 @@ class Environment:
 
         self.agents = {}
         for n in range(num_agents):
-            self.agents[n] = Agent(self)
+            self.agents[n] = Agent(self, pos_hist_len=self.pos_hist_len)
 
         self.start = start
         self.goal = goal
@@ -300,4 +303,11 @@ class Environment:
 
 if __name__=="__main__":
     env = Environment(width=20, height=20, num_agents=1, start=Position(0,0), view_range=2, render=True)
+    
+    agents = env.step({0:Direction.RIGHT})
+    stepResponse = agents[0]
+    state = stepResponse.state
+    print(state.pastPositions)
+    print("---1")
+
     env._render(block=True)

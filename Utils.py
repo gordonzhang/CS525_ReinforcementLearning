@@ -1,5 +1,6 @@
 import numpy as np
 from enum import Enum
+from queue import Queue
 
 class Position():
     def __init__(self, y=0,x=0):
@@ -30,6 +31,12 @@ class Position():
         return self.x > o.x and self.y > o.y
     def __ge__(self, o): # For x >= y
         return self.x >= o.x and self.y >= o.y
+
+    def __str__(self):
+        return "(Y: %s, X: %s)" %(self.y, self.x)
+
+    def __repr__(self):
+        return str(self)
 
 class Direction(Enum):
     UP = 0
@@ -131,10 +138,14 @@ class StepResponse:
         return (self.state.asStd(), self.reward, self.done, self.info)
 
 class Agent:
-    def __init__(self, env, pos_start=Position()):
+    def __init__(self, env, pos_hist_len=5, pos_start=Position()):
         self.pos = pos_start
-        self.pos_history = [pos_start]
+        self.pos_history = Queue(maxsize=pos_hist_len)
+
         self.env = env
+
+        for i in range(pos_hist_len):
+            self.pos_history.put(pos_start, block=False)
 
     def _set_pos(self, new_pos):
         self.pos = new_pos
@@ -147,11 +158,11 @@ class Agent:
             obs: sensed observation from the environment
             position_history: history of visited positions
         '''
-        self.pos_history.append(new_pos)
+        self.pos_history.get(block=False)
+        self.pos_history.put(new_pos, block=False)
 
         observation = self.env._sense_from_position(new_pos)
 
-        state = State(observation, self.pos_history)
-        
-        return state
+        state = State(observation, list(self.pos_history.queue))
 
+        return state

@@ -34,6 +34,7 @@ def main(stdscr):
             reward = result.reward
             done = result.done
 
+
             if done:
                 pStr = None
             else:
@@ -46,6 +47,7 @@ def main(stdscr):
             stdscr.addstr("Reward: " + str(reward))
             stdscr.addstr("\nAm I done? " + str(done))
             stdscr.addstr("\nI see: " + str(pStr))
+            stdscr.addstr("\nMy hist: " + str(state.pastPositions))
             
             stdscr.refresh()
             stdscr.move(0, 0)
