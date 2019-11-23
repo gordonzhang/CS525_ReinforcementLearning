@@ -53,6 +53,23 @@ class Environment:
         if self.renderEnv:
             self._render()
 
+    def get_state(self):        
+        states = {}
+        print(self.agents)
+        for rid, agent in self.agents.items():
+            print(agent)
+            state = agent._get_state(agent.pos)
+
+            if self.std:
+                state = state.asStd()
+
+            states[rid] = state
+
+        if self.renderEnv:
+            self._render()
+
+        return states
+
 
     def reset(self):
         '''
@@ -303,6 +320,8 @@ class Environment:
 
 if __name__=="__main__":
     env = Environment(width=20, height=20, num_agents=1, start=Position(0,0), view_range=2, render=True)
+
+    print(env.get_state())
     
     agents = env.step({0:Direction.RIGHT})
     stepResponse = agents[0]
