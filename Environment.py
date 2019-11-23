@@ -1,11 +1,11 @@
-from Utils import Agent, Direction, Position, StepResponse, Observation
+from Utils import Agent, Direction, Position, StepResponse, Observation, RewardMap
 from enum import Enum
 import numpy as np
 
 
 class Environment:
 
-    def __init__(self, width=10, height=10, num_agents=1, start=Position(), goal=Position(9,9), view_range=1, render=False, std=False):
+    def __init__(self, height=5, width=5, num_agents=1, start=Position(), goal=Position(9,9), view_range=1, horizon=2, goal_reward=1.0, render=False, std=False):
         self.std = std
 
         self.width = width
@@ -33,8 +33,10 @@ class Environment:
 
         self.dead = False
 
-        self.reward_map = np.zeros((height,width))
-        self.reward_map[goal.asTuple()] = 1.0
+        self.reward_map = RewardMap(self.goal, self.height, self.width, horizon, goal_reward)
+
+        # self.reward_map = np.zeros((height,width))
+        # self.reward_map[goal.asTuple()] = 1.0
 
         self.reward_death = -100.0
 
@@ -148,7 +150,7 @@ class Environment:
             return reward
         
         # if pos[0] < 0 or pos[1] < 0 or pos[0] > self.height-1 or pos[1] < :
-        reward = self.reward_map[pos.asTuple()]
+        reward = self.reward_map._reward(pos)
 
         return reward
 
@@ -288,11 +290,11 @@ class Environment:
 
         self.fig.suptitle("Agent in grid world, plus edges")
         plt.draw()
-        plt.show(block=False)
+        plt.show(block=block)
         # if (iteration % 2 == 0 and iteration <= 8) or iteration == 40:
         # 	fig.savefig("P=%.1f_t=%d_Iteration=%d.png" % (P, t, iteration))
         plt.pause(0.001)
 
 if __name__=="__main__":
-    env = Environment()
+    env = Environment(width=5, height=5, num_agents=1, start=Position(0,0), goal=Position(4,4), view_range=2, render=True)
     env._render(block=True)

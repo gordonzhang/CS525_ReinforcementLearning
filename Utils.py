@@ -75,6 +75,45 @@ class State:
 
         return (obs, pp)
 
+class RewardMap:
+    def __init__(self, goal, height, width, horizon, goal_reward):
+        self.horizon = horizon
+        self.goal = goal
+        self.width = width
+        self.height = height
+
+        self.goal_reward = goal_reward
+
+        self.reward_map = np.zeros((height,width))
+
+        self._populate_map()
+
+    def _reward(self, pos):
+        return self.reward_map[pos.asTuple()]
+
+    def _populate_map(self):
+        # get max manhattan distance
+        dist_max = -1
+
+        for y in range(self.height):
+            for x in range(self.width):
+                dist_max = max(dist_max, self._manhattan_distance(Position(y,x), self.goal))
+
+        divisor = dist_max / self.horizon
+
+        for y in range(self.height):
+            for x in range(self.width):
+                numerator = self._manhattan_distance(Position(y,x), self.goal)
+                self.reward_map[y,x] = -numerator//self.horizon/divisor
+
+        self.reward_map[self.goal.asTuple()] = self.goal_reward
+
+        # print(self.reward_map)
+
+    def _manhattan_distance(self, pos0, pos1):
+        # dist = |𝑎−𝑐|+|𝑏−𝑑|
+        return abs(pos0.x - pos1.x) + abs(pos0.y - pos1.y)
+
 class StepResponse:
     def __init__(self, state, reward, done, info=None):
         self.state = state
@@ -115,3 +154,4 @@ class Agent:
         state = State(observation, self.pos_history)
         
         return state
+
