@@ -82,6 +82,37 @@ class State:
 
         return (obs, pp)
 
+    def as1xnArray(self):
+        obs = self.observation
+        
+        arr = []
+        arr.extend(obs.up)
+        arr.extend(obs.right)
+        arr.extend(obs.down)
+        arr.extend(obs.left)
+
+        for pos in self.pastPositions:
+            arr.append(pos.x)
+            arr.append(pos.y)
+
+        return np.array(arr)
+
+    def as2xnArray(self):
+        assert len(self.observation.up) == 2, "observation len is not 2, so cannot make 2xn array"
+
+        obs = self.observation
+        
+        arr = []
+        arr.append(obs.up)
+        arr.append(obs.right)
+        arr.append(obs.down)
+        arr.append(obs.left)
+
+        for pos in self.pastPositions:
+            arr.append(np.array([pos.y, pos.x]))
+            
+        return np.array(arr)
+
 class RewardMap:
     def __init__(self, goal, height, width, horizon, goal_reward):
         self.horizon = horizon

@@ -310,4 +310,7 @@ if __name__=="__main__":
     print(state.pastPositions)
     print("---1")
 
+    res = state.as2xnArray()
+    print(res)
+
     env._render(block=True)
