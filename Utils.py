@@ -2,8 +2,9 @@ import numpy as np
 from enum import Enum
 from queue import Queue
 
-class Position():
-    def __init__(self, y=0,x=0):
+
+class Position:
+    def __init__(self, y=0, x=0):
         self.x = x
         self.y = y
 
@@ -17,32 +18,34 @@ class Position():
         return Position(self.y, self.x-1)
 
     def asTuple(self):
-        return (self.y, self.x)
+        return self.y, self.x
 
-    def __lt__(self, o): # For x < y
+    def __lt__(self, o):  # For x < y
         return self.x < o.x and self.y < o.y
-    def __le__(self, o): # For x <= y
+    def __le__(self, o):  # For x <= y
         return self.x <= o.x and self.y <= o.y
-    def __eq__(self, o): # For x == y
+    def __eq__(self, o):  # For x == y
         return self.x == o.x and self.y == o.y
-    def __ne__(self, o): # For x != y OR x <> y
+    def __ne__(self, o):  # For x != y OR x <> y
         return self.x != o.x and self.y != o.y
-    def __gt__(self, o): # For x > y
+    def __gt__(self, o):  # For x > y
         return self.x > o.x and self.y > o.y
-    def __ge__(self, o): # For x >= y
+    def __ge__(self, o):  # For x >= y
         return self.x >= o.x and self.y >= o.y
 
     def __str__(self):
-        return "(Y: %s, X: %s)" %(self.y, self.x)
+        return "(Y: %s, X: %s)" % (self.y, self.x)
 
     def __repr__(self):
         return str(self)
+
 
 class Direction(Enum):
     UP = 0
     RIGHT = 1
     DOWN = 2
     LEFT = 3
+
 
 class Observation:
     def __init__(self, up, right, down, left):
@@ -52,21 +55,24 @@ class Observation:
         self.left = left
 
     def asDict(self):
-        return { \
-            Direction.UP:self.up, \
-            Direction.RIGHT:self.right, \
-            Direction.DOWN:self.down, \
-            Direction.LEFT:self.left }
+        return {
+            Direction.UP: self.up,
+            Direction.RIGHT: self.right,
+            Direction.DOWN: self.down,
+            Direction.LEFT: self.left
+        }
 
     def asStd(self):
-        return { \
-            0:self.up.tolist(), \
-            1:self.right.tolist(), \
-            2:self.down.tolist(), \
-            3:self.left.tolist() }
+        return {
+            0: self.up.tolist(),
+            1: self.right.tolist(),
+            2: self.down.tolist(),
+            3: self.left.tolist()
+        }
+
 
 class State:
-    def __init__(self, observation, pastPositions):
+    def __init__(self, observation: Observation, pastPositions):
         self.observation = observation
         self.pastPositions = pastPositions
 
@@ -80,7 +86,7 @@ class State:
         for p in self.pastPositions:
             pp.append(p.asTuple())
 
-        return (obs, pp)
+        return obs, pp
 
     def as1xnArray(self):
         obs = self.observation
@@ -102,16 +108,13 @@ class State:
 
         obs = self.observation
         
-        arr = []
-        arr.append(obs.up)
-        arr.append(obs.right)
-        arr.append(obs.down)
-        arr.append(obs.left)
+        arr = [obs.up, obs.right, obs.down, obs.left]
 
         for pos in self.pastPositions:
             arr.append(np.array([pos.y, pos.x]))
             
         return np.array(arr)
+
 
 class RewardMap:
     def __init__(self, goal, height, width, horizon, goal_reward):
@@ -122,7 +125,7 @@ class RewardMap:
 
         self.goal_reward = goal_reward
 
-        self.reward_map = np.zeros((height,width))
+        self.reward_map = np.zeros((height, width))
 
         self._populate_map()
 
@@ -135,14 +138,14 @@ class RewardMap:
 
         for y in range(self.height):
             for x in range(self.width):
-                dist_max = max(dist_max, self._manhattan_distance(Position(y,x), self.goal))
+                dist_max = max(dist_max, self._manhattan_distance(Position(y, x), self.goal))
 
         divisor = dist_max / self.horizon
 
         for y in range(self.height):
             for x in range(self.width):
-                numerator = self._manhattan_distance(Position(y,x), self.goal)
-                self.reward_map[y,x] = -numerator//self.horizon/divisor
+                numerator = self._manhattan_distance(Position(y, x), self.goal)
+                self.reward_map[y, x] = -numerator//self.horizon/divisor
 
         self.reward_map[self.goal.asTuple()] = self.goal_reward
 
@@ -152,6 +155,7 @@ class RewardMap:
         # dist = |𝑎−𝑐|+|𝑏−𝑑|
         return abs(pos0.x - pos1.x) + abs(pos0.y - pos1.y)
 
+
 class StepResponse:
     def __init__(self, state, reward, done, info=None):
         self.state = state
@@ -160,13 +164,14 @@ class StepResponse:
         self.info = info
     
     def asTuple(self):
-        return (self.state, self.reward, self.done, self.info)
+        return self.state, self.reward, self.done, self.info
     
     def asStd(self):
         if self.state is None:
-            return (None, self.reward, self.done, self.info)
+            return None, self.reward, self.done, self.info
             
-        return (self.state.asStd(), self.reward, self.done, self.info)
+        return self.state.asStd(), self.reward, self.done, self.info
+
 
 class Agent:
     def __init__(self, env, pos_hist_len=5, pos_start=Position()):
@@ -182,13 +187,13 @@ class Agent:
         self.pos = new_pos
         
     def _get_state(self, new_pos):
-        '''
+        """
 
         :param new_pos: new position of the agent
         :return: tuple of 2 items:
             obs: sensed observation from the environment
             position_history: history of visited positions
-        '''
+        """
         self.pos_history.get(block=False)
         self.pos_history.put(new_pos, block=False)
 

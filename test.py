@@ -1,10 +1,5 @@
-"""
-
-### NOTICE ###
-DO NOT revise this file
-
-"""
-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import argparse
 import numpy as np
 from Environment import Environment
@@ -12,13 +7,8 @@ from Environment import Environment
 seed = 11037
 
 def parse():
-    parser = argparse.ArgumentParser(description="DS595/CS525 RL Project 3")
+    parser = argparse.ArgumentParser(description="DS595/CS525 RL Project 4")
     parser.add_argument('--test_dqn', action='store_true', help='whether test DQN')
-    try:
-        from argument import add_arguments
-        parser = add_arguments(parser)
-    except:
-        pass
     args = parser.parse_args()
     return args
 

@@ -5,8 +5,8 @@ import numpy as np
 
 class Environment:
 
-    def __init__(self, height=5, width=5, num_agents=1, start=Position(), goal=Position(9E9,9E9), \
-                    view_range=1, horizon=2, goal_reward=1.0, pos_hist_len=5, render=False, std=False):
+    def __init__(self, height=5, width=5, num_agents=1, start=Position(0, 0), goal=Position(9E9, 9E9),
+                 view_range=1, horizon=2, goal_reward=1.0, pos_hist_len=5, render=False, std=False):
         self.std = std
 
         self.width = width
@@ -18,7 +18,7 @@ class Environment:
             start = Position(y=start[0], x=start[1])
             goal = Position(y=goal[0], x=goal[1])
 
-        if(goal.x > self.width or goal.y > self.height):
+        if goal.x > self.width or goal.y > self.height:
             goal = Position(self.height-1, self.width-1)
 
         # self.grid stores state of each grid of the map
@@ -72,10 +72,10 @@ class Environment:
 
 
     def reset(self):
-        '''
+        """
 
         :return: dict of agent state
-        '''
+        """
         self.__init__(self.width, self.height, self.num_agents, self.start, self.goal)
 
         # FIXME: temp setup states
@@ -83,7 +83,7 @@ class Environment:
         return states
 
     def step(self, actions):
-        '''
+        """
 
         :param actions: dict of actions per agent
         :return: dict of tuples, each element being:
@@ -91,7 +91,7 @@ class Environment:
             reward: reward for the agent
             done: agent terminated or not
             info: anything else
-        '''
+        """
 
         results = {}
         for rid, action in actions.items():
@@ -111,7 +111,7 @@ class Environment:
         return results
 
     def _make_action(self, rid, action):
-        '''
+        """
 
         :param rid: id of the agent
         :param action: action for the agent
@@ -120,12 +120,12 @@ class Environment:
             reward: reward for the agent
             done: agent terminated or not
             info: anything else
-        '''
+        """
         agent = self.agents[rid]
         pos = agent.pos
         # action: 0-north, 1-east, 2-south, 3-west
 
-        new_pos = Position(-1,-1)
+        new_pos = Position(-1, -1)
         if action == Direction.UP or action == Direction.UP.value:
             new_pos = pos.up()
         elif action == Direction.RIGHT or action == Direction.RIGHT.value:
@@ -138,13 +138,13 @@ class Environment:
         agent._set_pos(new_pos)
 
         try:
-            assert new_pos >= Position(0,0), "out of bounds - outside map (below_min)"
+            assert new_pos >= Position(0, 0), "out of bounds - outside map (below_min)"
             assert new_pos < Position(self.height, self.width), "out of bounds - outside map (above_max)"
             assert self.grid[new_pos.asTuple()] != 0, "out of bounds - internal edge"
 
         except Exception as e:
             # print("position:", new_pos, "is", e)
-            # print("\tRemember (in y,x fromat) the grid size is", self.grid.shape)
+            # print("\tRemember (in y,x format) the grid size is", self.grid.shape)
             self.dead = True
             reward = self._get_reward(new_pos)
             return StepResponse(None, reward, True)
@@ -159,16 +159,16 @@ class Environment:
         return resp
 
     def _get_reward(self, pos):
-        '''
+        """
 
         :param pos: position of the agent
         :return: dict of tuples, each element being:
             reward: reward for the given position
-        '''
+        """
 
         # FIXME: temp implement reward
 
-        if(self.dead):
+        if self.dead:
             reward = self.reward_death
             return reward
         
@@ -178,13 +178,13 @@ class Environment:
         return reward
 
     def _get_terminate(self, pos):
-        '''
+        """
 
         :param pos: pos of the agent
         :return: is the state an end-state
-        '''
+        """
 
-        if(pos) == self.goal:
+        if pos == self.goal:
             # at goal
             return True
             
@@ -193,11 +193,11 @@ class Environment:
         return False
 
     def _sense_from_position(self, pos):
-        '''
+        """
 
         :param pos: pos of the agent
         :return: sense of the state
-        '''
+        """
 
         # action: 0-north, 1-east, 2-south, 3-west
         # 0-obstacle, 1-walkable, 2-goal, 3-agent
@@ -232,13 +232,13 @@ class Environment:
         # return {Direction.UP:north, Direction.RIGHT:east, Direction.DOWN:south, Direction.LEFT:west}
 
     def _sense_helper(self, arr):
-        '''
+        """
 
         :param arr: array of direction view
         :return: array of direction view
-        '''
+        """
 
-        arr = np.pad(arr, (0,max(0,self.view_range-len(arr))), 'constant', constant_values=(0))
+        arr = np.pad(arr, (0, max(0, self.view_range-len(arr))), 'constant', constant_values=0)
 
         set_unknown = False
 
@@ -258,9 +258,9 @@ class Environment:
         return arr
 
     def _render(self, block=False):
-        '''
+        """
 
-        '''
+        """
 
 
         import matplotlib.pyplot as plt
@@ -268,31 +268,31 @@ class Environment:
         import matplotlib.ticker as plticker
         from matplotlib.ticker import AutoMinorLocator
 
-        if self.called_render == False:
+        if not self.called_render:
             self.called_render = True
 
-            # persisitent graph variables
+            # persistent graph variables
             self.fig, self.ax = plt.subplots()
 
             self.cmap = colors.ListedColormap(['black', 'white', 'green', 'blue'])
-            self.bounds = [0,0,1,1,2,2,3,3]
+            self.bounds = [0, 0, 1, 1, 2, 2, 3, 3]
             self.norm = colors.BoundaryNorm(self.bounds, self.cmap.N)
             
             temp = self.grid.copy()
-            vpad = np.zeros((self.height,1))
-            hpad = np.zeros((1,self.width+2))
+            vpad = np.zeros((self.height, 1))
+            hpad = np.zeros((1, self.width+2))
 
-            self.grid_copy = np.hstack((vpad,temp,vpad))
-            self.grid_copy = np.vstack((hpad,self.grid_copy,hpad))
+            self.grid_copy = np.hstack((vpad, temp, vpad))
+            self.grid_copy = np.vstack((hpad, self.grid_copy, hpad))
 
             self.ax.set_xlim(0, self.width+1.5)
             self.ax.set_ylim(self.height+1.5, 0)
-            self.ax.set_xticks(range(0,self.width+2))
-            x_values = np.arange(start=0,stop=self.width+2) - .5
+            self.ax.set_xticks(range(0, self.width+2))
+            x_values = np.arange(start=0, stop=self.width+2) - .5
             self.ax.set_xticks(x_values, minor=True)
 
-            self.ax.set_yticks(range(self.height+1,-1,-1))
-            y_values = np.arange(start=self.height+2,stop=-1, step=-1) - .5
+            self.ax.set_yticks(range(self.height+1, -1, -1))
+            y_values = np.arange(start=self.height+2, stop=-1, step=-1) - .5
             self.ax.set_yticks(y_values, minor=True)
             self.ax.grid(which='minor')
 
@@ -305,7 +305,7 @@ class Environment:
         for rid, agent in self.agents.items():
             pos = agent.pos
             pos = pos.down().right()
-            self.grid_copy[pos.asTuple()]=3
+            self.grid_copy[pos.asTuple()] = 3
 
         # grid_copy = self.grid_copy[::-1,:]
         # self.im.set_data(grid_copy)
@@ -318,12 +318,13 @@ class Environment:
         # 	fig.savefig("P=%.1f_t=%d_Iteration=%d.png" % (P, t, iteration))
         plt.pause(0.001)
 
-if __name__=="__main__":
-    env = Environment(width=20, height=20, num_agents=1, start=Position(0,0), view_range=2, render=True)
+
+if __name__ == "__main__":
+    env = Environment(width=20, height=20, num_agents=1, start=Position(0, 0), view_range=2, render=True)
 
     print(env.get_state())
     
-    agents = env.step({0:Direction.RIGHT})
+    agents = env.step({0: Direction.RIGHT})
     stepResponse = agents[0]
     state = stepResponse.state
     print(state.pastPositions)
