@@ -4,7 +4,6 @@ import random
 import numpy as np
 from collections import deque
 import os
-import sys
 
 import torch
 import torch.nn.functional as F
@@ -12,11 +11,8 @@ import torch.optim as optim
 
 from agent import Agent
 from dqn_model import DQN
-import matplotlib
 from matplotlib import pyplot as plt
-"""
-you can import any package and define any extra function as you need
-"""
+
 
 torch.manual_seed(595)
 np.random.seed(595)
@@ -35,19 +31,19 @@ class Agent_DQN(Agent):
             ...
         """
 
-        super(Agent_DQN,self).__init__(env)
+        super(Agent_DQN, self).__init__(env)
         ###########################
         # YOUR IMPLEMENTATION HERE #
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         self.state_size = 4*2 + 2*2
-        self.state_size = env.get_state()[0].as1xnArray.shape[0]
+        self.state_size = env.get_state()[0].as1xnArray().shape[0]
         self.action_size = 4
-        self.memory = deque(maxlen = 1000000)
-        self.thirty_ep_reward = deque(maxlen = 100000)
+        self.memory = deque(maxlen=1000000)
+        self.thirty_ep_reward = deque(maxlen=100000)
 
-        #print(self.state_size, self.action_size)
+        # print(self.state_size, self.action_size)
         # Discount Factor
         self.gamma = 0.99
         # Exploration Rate: at the beginning do 100% exploration
@@ -69,14 +65,14 @@ class Agent_DQN(Agent):
         self.q_prime = DQN(self.state_size, self.action_size).to(self.device)
         self.q_prime.load_state_dict(self.qnetwork.state_dict())
 
-        self.optimizer = optim.Adam(self.qnetwork.parameters(), lr = self.learning_rate)
+        self.optimizer = optim.Adam(self.qnetwork.parameters(), lr=self.learning_rate)
 
         self.loss = 0
 
         self.file_path = 'trained_models_2/./Q_Network_Parameters_'
 
         if args.test_dqn:
-            #you can load your model here
+            # you can load your model here
             print('loading trained model')
             ###########################
             # YOUR IMPLEMENTATION HERE #
@@ -84,8 +80,8 @@ class Agent_DQN(Agent):
             load_file_path = self.file_path+str(file_number_to_load)+'.pth'
             self.qnetwork.load_state_dict(torch.load(load_file_path, map_location = lambda storage, loc: storage))
 
-            #for name, param in self.qnetwork.named_parameters():
-            #    print(name, '\t\t', param.shape)
+            # for name, param in self.qnetwork.named_parameters():
+            # print(name, '\t\t', param.shape)
             print('loaded weights')
             print(self.qnetwork.head.weight)
 
@@ -114,11 +110,11 @@ class Agent_DQN(Agent):
         """
         ###########################
         # YOUR IMPLEMENTATION HERE #
-        observation = observation[np.newaxis,:]
-        observation = torch.tensor(observation, dtype = torch.float32).to(self.device)
-        observation = observation.permute(0 , 3, 1, 2)
+        observation = observation[np.newaxis, :]
+        observation = torch.tensor(observation, dtype=torch.float32).to(self.device)
+        observation = observation.permute(0, 3, 1, 2)
         if not test:
-            if np.random.rand()<=self.epsilon:
+            if np.random.rand() <= self.epsilon:
                 action = random.randrange(self.action_size)
             else:
                 action = torch.argmax(self.qnetwork(observation)).item()
@@ -137,9 +133,9 @@ class Agent_DQN(Agent):
         """
         ###########################
         # YOUR IMPLEMENTATION HERE #
-        action = np.array(action, dtype = np.uint8)
-        reward = np.array(reward, dtype = np.float32)
-        done = np.array(done, dtype = np.float32)
+        action = np.array(action, dtype=np.uint8)
+        reward = np.array(reward, dtype=np.float32)
+        done = np.array(done, dtype=np.float32)
         self.memory.append((state, action, reward, next_state, done))
         ###########################
 
@@ -153,6 +149,7 @@ class Agent_DQN(Agent):
         minibatch = random.sample(self.memory, self.batch_size)
         ###########################
         return minibatch
+
     def learn(self):
         minibatch = self.replay_buffer(self.batch_size)
 
@@ -164,17 +161,17 @@ class Agent_DQN(Agent):
         next_states = torch.from_numpy(np.stack(next_states)).to(self.device)
         dones = torch.from_numpy(np.stack(dones)).to(self.device)
 
-        states = states.permute(0 , 3, 1, 2).float()
+        states = states.permute(0, 3, 1, 2).float()
         next_states = next_states.permute(0, 3, 1, 2).float()
         actions = actions.unsqueeze(1)
         qfun = self.qnetwork(states)
 
-        #print('input...\n',states[1][1].shape)
-        #fig = plt.figure()
-        #plt.imshow(states[0,0,:,:].cpu())
-        #plt.title('State')
-        #plt.savefig('state.png')
-        #plt.close()
+        # print('input...\n',states[1][1].shape)
+        # fig = plt.figure()
+        # plt.imshow(states[0,0,:,:].cpu())
+        # plt.title('State')
+        # plt.savefig('state.png')
+        # plt.close()
 
         state_action_values = qfun.gather(1, actions.long()).squeeze()
 
@@ -195,9 +192,9 @@ class Agent_DQN(Agent):
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
-        #print(torch.sum(self.qnetwork.conv1.weight.data))
+        # print(torch.sum(self.qnetwork.conv1.weight.data))
 
-    def train(self, n_episodes = 100000):
+    def train(self, n_episodes=100000):
         """
         Implement your training algorithm here
         """
@@ -230,14 +227,13 @@ class Agent_DQN(Agent):
             ep_reward = 0.0
             counter = 0.0
 
-
-
             while not done:
                 frames += 1
                 counter += 1
                 time_steps += 1
 
-                if render: self.env.env.render()
+                if render:
+                    self.env.env.render()
                 action = self.make_action(state, False)
                 next_state, reward, done, _ = self.env.step(action)
                 reward = np.clip(reward, -1, 1)
@@ -245,18 +241,18 @@ class Agent_DQN(Agent):
                 self.push(state, action, reward, next_state, done)
 
                 state = next_state
-                #if done:
+                # if done:
                 #    reward = -1
 
                 if frames > 500000:
                     if len(self.memory) > self.batch_size:
                         self.learn()
-                        if frames%5000 == 0:
+                        if frames % 5000 == 0:
                             print('------------ UPDATING TARGET -------------')
                             self.q_prime.load_state_dict(self.qnetwork.state_dict())
 
-                running_loss+= self.loss
-                ep_reward+=reward
+                running_loss += self.loss
+                ep_reward += reward
                 thirty_reward += reward
 
             ep_epsilon.append(self.epsilon)
@@ -265,13 +261,13 @@ class Agent_DQN(Agent):
             print('Epsilon: ', self.epsilon)
 
             # Logging the average reward over 30 episodes
-            if ep_counter%30 == 0:
+            if ep_counter % 30 == 0:
                 print('Frame: ', frames)
                 thirty_ep_reward.append(thirty_reward/30)
                 thirty_ep_ep.append(e)
                 print('The Average Reward over 30 Episodes: ', thirty_reward/30.0)
                 with open('trained_models_2/log.txt', 'a+') as log:
-                    log.write(str(naming_counter)+' had a reward of '+ str(thirty_reward/30.0)+' over 30 ep\n')
+                    log.write(str(naming_counter)+' had a reward of ' + str(thirty_reward/30.0)+' over 30 ep\n')
 
                 time_steps = 0.0
                 thirty_reward = 0.0

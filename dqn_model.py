@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import torch.nn as nn
-import torch.nn.functional as F
+import torch.nn.functional as func
+
 
 class DQN(nn.Module):
     """Initialize a deep Q-learning network
@@ -41,8 +42,8 @@ class DQN(nn.Module):
         """
         ###########################
         # YOUR IMPLEMENTATION HERE #
-        x = F.relu(self.bn1(self.fc1(x)))
-        x = F.relu(self.bn2(self.fc2(x)))
-        x = F.relu(self.bn3(self.fc3(x)))
+        x = func.relu(self.bn1(self.fc1(x)))
+        x = func.relu(self.bn2(self.fc2(x)))
+        x = func.relu(self.bn3(self.fc3(x)))
         ###########################
         return self.head(x)

@@ -2,6 +2,7 @@ import argparse
 from test import test
 from Environment import Environment
 
+from Utils import Position
 
 def parse():
     parser = argparse.ArgumentParser(description="DS595/CS525 RL Project 3")
@@ -16,7 +17,7 @@ def parse():
 
 def run(args):
     if args.train_dqn:
-        env = Environment()
+        env = Environment(width=5, height=5, num_agents=1, start=Position(0, 0), goal=Position(4, 4), view_range=2)
         from agent_dqn import Agent_DQN
         agent = Agent_DQN(env, args)
         agent.train()
@@ -29,5 +30,5 @@ def run(args):
 
 
 if __name__ == '__main__':
-    args = parse()
-    run(args)
+    arguments = parse()
+    run(arguments)

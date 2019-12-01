@@ -11,6 +11,14 @@ class Environment:
 
         self.width = width
         self.height = height
+        self.num_agents = num_agents
+
+        self.start = start
+        self.goal = goal
+
+        self.view_range = view_range
+
+        self.dead = False
 
         self.pos_hist_len = pos_hist_len
 
@@ -29,15 +37,8 @@ class Environment:
         self.num_agents = num_agents
 
         self.agents = {}
-        for n in range(num_agents):
-            self.agents[n] = Agent(self, pos_hist_len=self.pos_hist_len)
-
-        self.start = start
-        self.goal = goal
-
-        self.view_range = view_range
-
-        self.dead = False
+        for n in range(self.num_agents):
+            self.agents[n] = Agent(self, pos_hist_len=self.pos_hist_len, pos_start=self.start)
 
         self.reward_map = RewardMap(self.goal, self.height, self.width, horizon, goal_reward)
 
@@ -55,9 +56,9 @@ class Environment:
 
     def get_state(self):        
         states = {}
-        print(self.agents)
+        # print(self.agents)
         for rid, agent in self.agents.items():
-            print(agent)
+            # print(agent)
             state = agent._get_state(agent.pos)
 
             if self.std:
@@ -74,13 +75,16 @@ class Environment:
     def reset(self):
         """
 
-        :return: dict of agent state
+        :return: dict of agent states
         """
-        self.__init__(self.width, self.height, self.num_agents, self.start, self.goal)
+        results = {}
 
-        # FIXME: temp setup states
-        states = None
-        return states
+        for rid in range(self.num_agents):
+            self.agents[rid] = Agent(self, pos_hist_len=self.pos_hist_len, pos_start=self.start)
+            state_prime = self.agents[rid]._get_state(self.start)
+            results[rid] = StepResponse(state_prime, 0., False)
+
+        return results
 
     def step(self, actions):
         """
@@ -320,17 +324,24 @@ class Environment:
 
 
 if __name__ == "__main__":
-    env = Environment(width=20, height=20, num_agents=1, start=Position(0, 0), view_range=2, render=True)
+    env = Environment(width=5, height=5, num_agents=1, start=Position(0,0), goal=Position(4,4), view_range=3, render=True)
 
-    print(env.get_state())
+    print(env.get_state()[0].as1xnArray().shape[0])
+    """
+    env.step returns a library of agent stepResponses,
+    each stepResponse.asTuple() is a tuple w/ (State Obj, reward, done, info)
+    each state object 
+    """
     
     agents = env.step({0: Direction.RIGHT})
     stepResponse = agents[0]
-    state = stepResponse.state
-    print(state.pastPositions)
-    print("---1")
+    # print(agents[0].asTuple())
 
-    res = state.as2xnArray()
-    print(res)
+    state = stepResponse.state
+    # print(state.observation.asDict())
+    # print(state.pastPositions)
+    # print(state.as1xnArray())
+
+    print("---1")
 
     env._render(block=True)
