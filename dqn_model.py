@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import torch.nn as nn
-import torch.nn.functional as func
+import torch.nn.functional as f
 
 
 class DQN(nn.Module):
@@ -32,7 +32,7 @@ class DQN(nn.Module):
         self.bn3 = nn.BatchNorm1d(100)
 
         self.head = nn.Linear(100, output_size)
-
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         """
@@ -40,10 +40,8 @@ class DQN(nn.Module):
         a Tensor of output data. We can use Modules defined in the constructor as
         well as arbitrary operators on Tensors.
         """
-        ###########################
-        # YOUR IMPLEMENTATION HERE #
-        x = func.relu(self.bn1(self.fc1(x)))
-        x = func.relu(self.bn2(self.fc2(x)))
-        x = func.relu(self.bn3(self.fc3(x)))
-        ###########################
-        return self.head(x)
+        x = f.relu(self.bn1(self.fc1(x)))
+        x = f.relu(self.bn2(self.fc2(x)))
+        x = f.relu(self.bn3(self.fc3(x)))
+        x = self.head(x)
+        return x
