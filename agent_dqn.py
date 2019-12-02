@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import random
 import numpy as np
-from collections import deque
+from collections import deque, namedtuple
 import os
 
 import torch
@@ -20,6 +20,7 @@ random.seed(595)
 
 
 class Agent_DQN(Agent):
+
     def __init__(self, env, args):
         """
         Initialize everything you need here.
@@ -37,9 +38,9 @@ class Agent_DQN(Agent):
         self.state_size = env.get_state()[0].as1xnArray().shape[0]
         self.action_size = 4
 
-        self.memory = deque(maxlen=1000000)
-        self.thirty_ep_ep = deque(maxlen=100000)
-        self.thirty_ep_reward = deque(maxlen=100000)
+        self.memory = deque(maxlen=10000)
+        self.thirty_ep_ep = deque(maxlen=10000)
+        self.thirty_ep_reward = deque(maxlen=10000)
 
         # Discount Factor
         self.gamma = 0.99
@@ -78,98 +79,10 @@ class Agent_DQN(Agent):
             print('loaded weights')
             print(self.policy_net.head.weight)
 
-    def make_action(self, observation, test=True):
-        """
-        Return predicted action of your agent
-        Input:
-            observation: np.array
-                stack 4 last preprocessed frames, shape: (84, 84, 4)
-        Return:
-            action: int
-                the predicted action from trained model
-        """
-        # observation = observation[np.newaxis, :]
-        observation = torch.tensor(observation, dtype=torch.float32).to(self.device)
-        observation = observation.unsqueeze(0)
-
-        if not test:
-            if np.random.rand() <= self.epsilon:
-                action = random.randrange(self.action_size)
-            else:
-                with torch.no_grad():
-                    action = torch.argmax(self.policy_net(observation)).item()
-
-            if self.epsilon > self.epsilon_min:
-                self.epsilon = max(0, self.epsilon - self.epsilon_decay_frames)
-        else:
-            with torch.no_grad():
-                action = torch.argmax(self.policy_net(observation)).item()
-        return action
-
-    def push(self, state, action, reward, next_state, done):
-        """
-        Push new data to buffer and remove the old one if the buffer is full.
-        """
-        action = np.array(action, dtype=np.uint8)
-        reward = np.array(reward, dtype=np.float32)
-        done = np.array(done, dtype=np.float32)
-        self.memory.append((state, action, reward, next_state, done))
-
-    def replay_buffer(self, batch_size):
-        """
-        Select batch from buffer.
-        """
-        mini_batch = random.sample(self.memory, batch_size)
-        return mini_batch
-
-    def learn(self):
-        minibatch = self.replay_buffer(self.batch_size)
-
-        states, actions, rewards, next_states, dones = list(zip(*minibatch))
-
-        states = torch.from_numpy(np.stack(states)).to(self.device)
-        actions = torch.from_numpy(np.stack(actions)).to(self.device)
-        rewards = torch.from_numpy(np.stack(rewards)).to(self.device)
-        next_states = torch.from_numpy(np.stack(next_states)).to(self.device)
-        dones = torch.from_numpy(np.stack(dones)).to(self.device)
-
-        states = states.permute(0, 3, 1, 2).float()
-        next_states = next_states.permute(0, 3, 1, 2).float()
-        actions = actions.unsqueeze(1)
-        qfun = self.policy_net(states)
-
-        # print('input...\n',states[1][1].shape)
-        # fig = plt.figure()
-        # plt.imshow(states[0,0,:,:].cpu())
-        # plt.title('State')
-        # plt.savefig('state.png')
-        # plt.close()
-
-        state_action_values = qfun.gather(1, actions.long()).squeeze()
-
-        next_state_values = self.target_net(next_states).max(1).values.detach()
-
-        TD_error = rewards + self.gamma*next_state_values*(1-dones)
-
-        self.loss = f.smooth_l1_loss(state_action_values, TD_error)
-
-        self.optimizer.zero_grad()
-        self.loss.backward()
-
-        for param in self.policy_net.parameters():
-            param.grad.data.clamp_(-1, 1)
-        self.optimizer.step()
-
-        # print(torch.sum(self.policy_net.conv1.weight.data))
 
     def train(self, n_episodes=100000):
-        # Initializing counters and lists for average reward over 30 episodes:
         accumulated_reward = 0.0
         ep_epsilon = []
-
-        log = open('trained_models_2/log.txt', 'w+')
-        log.write('Beginning of Log\n')
-        log.close()
 
         for i_episode in range(n_episodes):
             results = self.env.reset()
@@ -181,15 +94,14 @@ class Agent_DQN(Agent):
             ep_reward = 0.0
 
             while not done:
-                if render:
-                    self.env.env.render()
                 action = self.make_action(state, False)
                 results = self.env.step({0: action})
                 next_state, reward, done, _ =  self.unpack(results)
+                print(reward, done)
                 self.push(state, action, reward, next_state, done)
                 state = next_state
 
-                if i_episode > 500000 and len(self.memory) > self.batch_size:
+                if i_episode > 1000 and len(self.memory) > self.batch_size:
                     self.learn()
                     if i_episode % 5000 == 0:
                         print('------------ UPDATING TARGET -------------')
@@ -237,6 +149,81 @@ class Agent_DQN(Agent):
                 plt.savefig('trained_models_2/reward.png')
                 plt.close()
 
+    def learn(self):
+        sampled_batch = self.replay_buffer(self.batch_size)
+
+        states, actions, rewards, next_states, dones = list(zip(*sampled_batch))
+
+        states = torch.from_numpy(np.stack(states)).to(self.device)
+        actions = torch.from_numpy(np.stack(actions)).to(self.device)
+        rewards = torch.from_numpy(np.stack(rewards)).to(self.device)
+        next_states = torch.from_numpy(np.stack(next_states)).to(self.device)
+        dones = torch.from_numpy(np.stack(dones)).to(self.device)
+
+        states = states.permute(0, 3, 1, 2).float()
+        next_states = next_states.permute(0, 3, 1, 2).float()
+        actions = actions.unsqueeze(1)
+        qfun = self.policy_net(states)
+
+        state_action_values = qfun.gather(1, actions.long()).squeeze()
+
+        next_state_values = self.target_net(next_states).max(1).values.detach()
+
+        TD_error = rewards + self.gamma*next_state_values*(1-dones)
+
+        self.loss = f.smooth_l1_loss(state_action_values, TD_error)
+
+        self.optimizer.zero_grad()
+        self.loss.backward()
+
+        for param in self.policy_net.parameters():
+            param.grad.data.clamp_(-1, 1)
+        self.optimizer.step()
+
+    def make_action(self, observation, test=True):
+        """
+        Return predicted action of your agent
+        Input:
+            observation: np.array
+                stack 4 last preprocessed frames, shape: (84, 84, 4)
+        Return:
+            action: int
+                the predicted action from trained model
+        """
+        observation = torch.tensor(observation, dtype=torch.float32).to(self.device)
+        observation = observation.unsqueeze(0)
+
+        if not test:
+            if np.random.rand() <= self.epsilon:
+                action = random.randrange(self.action_size)
+            else:
+                with torch.no_grad():
+                    # action = torch.argmax(self.policy_net(observation)).item()
+                    action = self.target_net(observation).max(1)[1].view(1, 1).item()
+                    # print(action)
+
+            if self.epsilon > self.epsilon_min:
+                self.epsilon = max(0, self.epsilon - self.epsilon_decay_frames)
+        else:
+            with torch.no_grad():
+                action = torch.argmax(self.policy_net(observation)).item()
+        return action
+
+    def push(self, state, action, reward, next_state, done):
+        """
+        Push new data to buffer and remove the old one if the buffer is full.
+        """
+        action = np.array(action, dtype=np.uint8)
+        reward = np.array(reward, dtype=np.float32)
+        done = np.array(done, dtype=np.float32)
+        self.memory.append((state, action, reward, next_state, done))
+
+    def replay_buffer(self, batch_size):
+        """
+        Select batch from buffer.
+        """
+        return random.sample(self.memory, batch_size)
+
     def unpack(self, results):
         result = results[0]
         state, reward, done, info = result.state, result.reward, result.done, result.info
@@ -244,3 +231,6 @@ class Agent_DQN(Agent):
             return None, reward, done, info
         else:
             return state.as1xnArray(), reward, done, info
+
+    def init_game_setting(self):
+        pass
