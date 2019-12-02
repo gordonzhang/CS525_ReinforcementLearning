@@ -90,6 +90,7 @@ class Agent_DQN(Agent):
         """
         # observation = observation[np.newaxis, :]
         observation = torch.tensor(observation, dtype=torch.float32).to(self.device)
+        observation = observation.unsqueeze(0)
 
         if not test:
             if np.random.rand() <= self.epsilon:
@@ -97,6 +98,9 @@ class Agent_DQN(Agent):
             else:
                 with torch.no_grad():
                     action = torch.argmax(self.policy_net(observation)).item()
+
+            if self.epsilon > self.epsilon_min:
+                self.epsilon = max(0, self.epsilon - self.epsilon_decay_frames)
         else:
             with torch.no_grad():
                 action = torch.argmax(self.policy_net(observation)).item()
@@ -152,10 +156,6 @@ class Agent_DQN(Agent):
         self.optimizer.zero_grad()
         self.loss.backward()
 
-        if self.epsilon > self.epsilon_min:
-            self.epsilon = max(0, self.epsilon - self.epsilon_decay_frames)
-
-
         for param in self.policy_net.parameters():
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
@@ -200,26 +200,25 @@ class Agent_DQN(Agent):
 
             ep_epsilon.append(self.epsilon)
             # Print average reward for the episode:
-            print('Episode ', i_episode, 'had a reward of: ', ep_reward)
-            print('Epsilon: ', self.epsilon)
+            # print('Episode ', i_episode, 'had a reward of: ', ep_reward)
+            # print('Epsilon: ', self.epsilon)
 
             # Logging the average reward over 30 episodes
             if i_episode % 30 == 0:
-                print('Frame: ', i_episode)
                 self.thirty_ep_reward.append(accumulated_reward/30.0)
                 self.thirty_ep_ep.append(i_episode)
-                print('The Average Reward over 30 Episodes: ', accumulated_reward/30.0)
+                if i_episode % 900 == 0:
+                    print('Episode: ',i_episode ,'Avg reward of last 30 episodes: ', accumulated_reward/30.0)
                 with open('trained_models_2/log.txt', 'a+') as log:
                     log.write(str(i_episode)+' had a reward of ' + str(accumulated_reward/30.0)+' over 30 ep\n')
 
                 accumulated_reward = 0.0
                 # Save network weights after we have started to learn
-                if i_episode > 3000:
+                if i_episode > 3000 and i_episode % 10000 == 0:
 
                     print('saving... ', i_episode)
                     save_file_path = self.file_path+str(i_episode)+'.pth'
                     torch.save(self.policy_net.state_dict(), save_file_path)
-                    i_episode += 1
 
 
                 fig = plt.figure()

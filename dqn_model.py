@@ -21,8 +21,7 @@ class DQN(nn.Module):
         member variables.
         """
         super(DQN, self).__init__()
-        ###########################
-        # YOUR IMPLEMENTATION HERE #
+
         self.fc1 = nn.Linear(input_size, 100)
         self.fc2 = nn.Linear(100, 100)
         self.fc3 = nn.Linear(100, 100)
@@ -40,8 +39,8 @@ class DQN(nn.Module):
         a Tensor of output data. We can use Modules defined in the constructor as
         well as arbitrary operators on Tensors.
         """
-        x = f.relu(self.bn1(self.fc1(x)))
-        x = f.relu(self.bn2(self.fc2(x)))
-        x = f.relu(self.bn3(self.fc3(x)))
+        x = f.relu(self.fc1(x))
+        x = f.relu(self.fc2(x))
+        x = f.relu(self.fc3(x))
         x = self.head(x)
         return x
