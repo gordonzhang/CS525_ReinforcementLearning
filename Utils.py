@@ -72,7 +72,7 @@ class Observation:
 
 
 class State:
-    def __init__(self, observation: Observation, pastPositions):
+    def __init__(self, observation, pastPositions):
         self.observation = observation
         self.pastPositions = pastPositions
 
@@ -152,7 +152,7 @@ class RewardMap:
         # print(self.reward_map)
 
     def _manhattan_distance(self, pos0, pos1):
-        # dist = |𝑎−𝑐|+|𝑏−𝑑|
+        # L1 distance
         return abs(pos0.x - pos1.x) + abs(pos0.y - pos1.y)
 
 
