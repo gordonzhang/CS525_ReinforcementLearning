@@ -82,7 +82,10 @@ class Environment:
         for rid in range(self.num_agents):
             self.agents[rid] = Agent(self, pos_hist_len=self.pos_hist_len, pos_start=self.start)
             state_prime = self.agents[rid]._get_state(self.start)
-            results[rid] = StepResponse(state_prime, 0., False)
+            results[rid] = StepResponse(state_prime, 0.0, False)
+
+        
+        self.dead = False
 
         return results
 
@@ -138,6 +141,8 @@ class Environment:
             new_pos = pos.down()
         elif action == Direction.LEFT or action == Direction.LEFT.value:
             new_pos = pos.left()
+        else:
+            print("Invalid direction: %s" %(action))
 
         agent._set_pos(new_pos)
 
@@ -193,6 +198,7 @@ class Environment:
             return True
             
         # TODO: implement agent collision
+        # TODO: implement internal walls
 
         return False
 

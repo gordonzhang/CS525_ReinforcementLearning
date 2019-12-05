@@ -17,7 +17,9 @@ def parse():
 
 def run(args):
     if args.train_dqn:
-        env = Environment(width=10, height=10, num_agents=1, start=Position(0, 0), goal=Position(9, 9), view_range=9)
+
+        #env = Environment(width=20, height=20, num_agents=1, start=Position(0,0), goal=Position(19,19), view_range=2, render=True)
+        env = Environment(width=10, height=10, num_agents=1, start=Position(0, 0), goal=Position(9, 9), view_range=2, render=False)
         from agent_dqn import Agent_DQN
         agent = Agent_DQN(env, args)
         agent.train()

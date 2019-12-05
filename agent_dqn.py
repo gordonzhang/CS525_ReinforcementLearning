@@ -97,7 +97,7 @@ class Agent_DQN(Agent):
                 action = self.make_action(state, False)
                 results = self.env.step({0: action})
                 next_state, reward, done, _ =  self.unpack(results)
-                print(reward, done)
+                # print(reward, done)
                 self.push(state, action, reward, next_state, done)
                 state = next_state
 
@@ -226,7 +226,7 @@ class Agent_DQN(Agent):
 
     def unpack(self, results):
         result = results[0]
-        state, reward, done, info = result.state, result.reward, result.done, result.info
+        state, reward, done, info = result.asTuple()
         if done:
             return None, reward, done, info
         else:

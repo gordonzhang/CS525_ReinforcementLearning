@@ -172,6 +172,9 @@ class StepResponse:
             
         return self.state.asStd(), self.reward, self.done, self.info
 
+    def __str__(self):
+        return "%s %s %s %s" %self.asStd()
+
 
 class Agent:
     def __init__(self, env, pos_hist_len=5, pos_start=Position()):
