@@ -156,7 +156,8 @@ class Environment:
             # print("\tRemember (in y,x format) the grid size is", self.grid.shape)
             self.dead = True
             reward = self._get_reward(new_pos)
-            return StepResponse(None, reward, True)
+            state_prime = agent._get_state(new_pos)
+            return StepResponse(state_prime, reward, True)
             # return None, reward, True, None
 
         state_prime = agent._get_state(new_pos)
@@ -211,6 +212,15 @@ class Environment:
 
         # action: 0-north, 1-east, 2-south, 3-west
         # 0-obstacle, 1-walkable, 2-goal, 3-agent
+
+        if self.dead:
+            sense = np.ndarray((self.view_range,))
+            sense.fill(-1)
+            sense = sense.astype(int)
+            # print(sense
+
+            obs = Observation(sense, sense, sense, sense)
+            return obs
 
         north_lim = max(0, pos.up().y - self.view_range)
         south_lim = min(self.height, pos.down().y + self.view_range)

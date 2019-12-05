@@ -87,7 +87,6 @@ class Agent_DQN(Agent):
         for i_episode in range(n_episodes):
             results = self.env.reset()
             state, reward, done, _ = self.unpack(results)
-            done = False
             render = os.path.isfile('.makePicture')
 
             # Counters for Reward Averages per episode:
@@ -119,8 +118,6 @@ class Agent_DQN(Agent):
             if i_episode % 30 == 0:
                 self.thirty_ep_reward.append(accumulated_reward/30.0)
                 self.thirty_ep_ep.append(i_episode)
-                if i_episode % 900 == 0:
-                    print('Episode: ',i_episode ,'Avg reward of last 30 episodes: ', accumulated_reward/30.0)
                 with open('trained_models_2/log.txt', 'a+') as log:
                     log.write(str(i_episode)+' had a reward of ' + str(accumulated_reward/30.0)+' over 30 ep\n')
 
@@ -149,6 +146,9 @@ class Agent_DQN(Agent):
                 plt.savefig('trained_models_2/reward.png')
                 plt.close()
 
+            if i_episode % 200 == 0:
+                print('Episode: ',i_episode ,'Avg reward of last 30 episodes: ', accumulated_reward/30.0)
+
     def learn(self):
         sampled_batch = self.replay_buffer(self.batch_size)
 
@@ -159,7 +159,7 @@ class Agent_DQN(Agent):
         rewards = torch.from_numpy(np.stack(rewards)).to(self.device)
         next_states = torch.from_numpy(np.stack(next_states)).to(self.device)
         dones = torch.from_numpy(np.stack(dones)).to(self.device)
-
+        
         states = states.permute(0, 3, 1, 2).float()
         next_states = next_states.permute(0, 3, 1, 2).float()
         actions = actions.unsqueeze(1)
@@ -227,10 +227,7 @@ class Agent_DQN(Agent):
     def unpack(self, results):
         result = results[0]
         state, reward, done, info = result.asTuple()
-        if done:
-            return None, reward, done, info
-        else:
-            return state.as1xnArray(), reward, done, info
+        return state.as1xnArray(), reward, done, info
 
     def init_game_setting(self):
         pass
