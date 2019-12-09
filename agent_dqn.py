@@ -112,14 +112,15 @@ class Agent_DQN(Agent):
                 self.push(state, action, reward, next_state, done)
                 state = next_state
 
-                if i_episode > 1000 and len(self.memory) > self.batch_size:
-                    self.learn()
-                    if i_episode % 5000 == 0:
-                        print('------------ UPDATING TARGET -------------')
-                        self.target_net.load_state_dict(self.policy_net.state_dict())
-
                 ep_reward += reward
                 accumulated_reward += reward
+
+
+            if i_episode > 1000 and len(self.memory) > self.batch_size:
+                self.learn()
+                if i_episode % 5000 == 0:
+                    print('------------ UPDATING TARGET -------------')
+                    self.target_net.load_state_dict(self.policy_net.state_dict())
 
             rewards_30.append(ep_reward)
             # print(rewards_30)
@@ -143,7 +144,7 @@ class Agent_DQN(Agent):
 
                 accumulated_reward = 0.0
                 # Save network weights after we have started to learn
-                if i_episode > 3000 and i_episode % 2000 == 0:
+                if i_episode > 3000 and i_episode % 1000 == 0:
 
                     print('saving... ', i_episode)
                     save_file_path = self.file_path+str(i_episode)+'.pth'
