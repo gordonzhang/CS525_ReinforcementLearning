@@ -33,7 +33,14 @@ class Agent_DQN(Agent):
         """
         super(Agent_DQN, self).__init__(env)
 
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        if torch.cuda.is_available():
+            self.device = 'cuda'
+            print("Using GPU!!!!")
+        else:
+            'cpu'
+            print("WARNING")
+            print("WARNING")
+            print("Using CPU")
 
         self.state_size = env.get_state()[0].as1xnArray().shape[0]
         self.action_size = 4
@@ -67,6 +74,9 @@ class Agent_DQN(Agent):
 
         self.file_path = 'trained_models_2/./Q_Network_Parameters_'
 
+        with open('trained_models_2/log2.txt', 'w+') as log:
+            log.write("episode,avg_reward,epsilon\n")
+
         if args.test_dqn:
             # load trained model
             print('loading trained model')
@@ -81,13 +91,15 @@ class Agent_DQN(Agent):
 
 
     def train(self, n_episodes=100000):
-        accumulated_reward = 0.0
         ep_epsilon = []
+        accumulated_reward = 0
+        rewards_30 = []
 
         for i_episode in range(n_episodes):
             results = self.env.reset()
             state, reward, done, _ = self.unpack(results)
             render = os.path.isfile('.makePicture')
+
 
             # Counters for Reward Averages per episode:
             ep_reward = 0.0
@@ -109,6 +121,12 @@ class Agent_DQN(Agent):
                 ep_reward += reward
                 accumulated_reward += reward
 
+            rewards_30.append(ep_reward)
+            # print(rewards_30)
+            if len(rewards_30) > 30:
+                # print("IN HERE")
+                del rewards_30[0]
+
             ep_epsilon.append(self.epsilon)
             # Print average reward for the episode:
             # print('Episode ', i_episode, 'had a reward of: ', ep_reward)
@@ -120,10 +138,12 @@ class Agent_DQN(Agent):
                 self.thirty_ep_ep.append(i_episode)
                 with open('trained_models_2/log.txt', 'a+') as log:
                     log.write(str(i_episode)+' had a reward of ' + str(accumulated_reward/30.0)+' over 30 ep\n')
+                with open('trained_models_2/log2.txt', 'a+') as log:
+                    log.write(str(i_episode) + ',' + str(sum(rewards_30)/30.0) + ',' + str(self.epsilon) + '\n')
 
                 accumulated_reward = 0.0
                 # Save network weights after we have started to learn
-                if i_episode > 3000 and i_episode % 10000 == 0:
+                if i_episode > 3000 and i_episode % 2000 == 0:
 
                     print('saving... ', i_episode)
                     save_file_path = self.file_path+str(i_episode)+'.pth'
@@ -147,7 +167,7 @@ class Agent_DQN(Agent):
                 plt.close()
 
             if i_episode % 200 == 0:
-                print('Episode: ',i_episode ,'Avg reward of last 30 episodes: ', accumulated_reward/30.0)
+                print('Episode: ',i_episode ,'Avg reward of last 30 episodes: ', sum(rewards_30)/30.0)
 
     def learn(self):
         sampled_batch = self.replay_buffer(self.batch_size)
@@ -160,8 +180,8 @@ class Agent_DQN(Agent):
         next_states = torch.from_numpy(np.stack(next_states)).to(self.device)
         dones = torch.from_numpy(np.stack(dones)).to(self.device)
         
-        states = states.permute(0, 3, 1, 2).float()
-        next_states = next_states.permute(0, 3, 1, 2).float()
+        states = states.float()
+        next_states = next_states.float()
         actions = actions.unsqueeze(1)
         qfun = self.policy_net(states)
 
@@ -176,8 +196,8 @@ class Agent_DQN(Agent):
         self.optimizer.zero_grad()
         self.loss.backward()
 
-        for param in self.policy_net.parameters():
-            param.grad.data.clamp_(-1, 1)
+        # for param in self.policy_net.parameters():
+        #     param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
     def make_action(self, observation, test=True):
